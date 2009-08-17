@@ -109,7 +109,7 @@ class setup:
 	# URL Shortening function huzzah
 	def shortenURL(self, url_to_shorten, shortener = "http://is.gd/api.php", query = "longurl"):
 		try:
-			return urllib2.urlopen(shortener + "?" + urllib.urlencode({query: url_to_shorten})).read()
+			return urllib2.urlopen(shortener + "?" + urllib.urlencode({query: self.unicode2utf8(url_to_shorten)})).read()
 		except HTTPError, e:
 			raise TangoError("shortenURL() failed with a %s error code." % `e.code`)
 	
@@ -196,7 +196,7 @@ class setup:
 			if len(list(status)) > 140:
 				raise TangoError("This status message is over 140 characters. Trim it down!")
 			try:
-				return simplejson.load(self.opener.open("http://twitter.com/statuses/update.json?", urllib.urlencode({"status": status, "in_reply_to_status_id": in_reply_to_status_id})))
+				return simplejson.load(self.opener.open("http://twitter.com/statuses/update.json?", urllib.urlencode({"status": self.unicode2utf8(status), "in_reply_to_status_id": in_reply_to_status_id})))
 			except HTTPError, e:
 				raise TangoError("updateStatus() failed with a %s error code." % `e.code`, e.code)
 		else:
@@ -259,7 +259,7 @@ class setup:
 		if self.authenticated is True:
 			if len(list(text)) < 140:
 				try:
-					return self.opener.open("http://twitter.com/direct_messages/new.json", urllib.urlencode({"user": user, "text": text}))
+					return self.opener.open("http://twitter.com/direct_messages/new.json", urllib.urlencode({"user": user, "text": self.unicode2utf8(text)}))
 				except HTTPError, e:
 					raise TangoError("sendDirectMessage() failed with a %s error code." % `e.code`, e.code)
 			else:
@@ -323,7 +323,7 @@ class setup:
 	def updateDeliveryDevice(self, device_name = "none"):
 		if self.authenticated is True:
 			try:
-				return self.opener.open("http://twitter.com/account/update_delivery_device.json?", urllib.urlencode({"device": device_name}))
+				return self.opener.open("http://twitter.com/account/update_delivery_device.json?", urllib.urlencode({"device": self.unicode2utf8(device_name)}))
 			except HTTPError, e:
 				raise TangoError("updateDeliveryDevice() failed with a %s error code." % `e.code`, e.code)
 		else:
@@ -360,27 +360,27 @@ class setup:
 			if url is not None:
 				if len(list(url)) < 100:
 					if useAmpersands is True:
-						updateProfileQueryString += "&" + urllib.urlencode({"url": url})
+						updateProfileQueryString += "&" + urllib.urlencode({"url": self.unicode2utf8(url)})
 					else:
-						updateProfileQueryString += urllib.urlencode({"url": url})
+						updateProfileQueryString += urllib.urlencode({"url": self.unicode2utf8(url)})
 						useAmpersands = True
 				else:
 					raise TangoError("Twitter has a character limit of 100 for all urls. Try again.")
 			if location is not None:
 				if len(list(location)) < 30:
 					if useAmpersands is True:
-						updateProfileQueryString += "&" + urllib.urlencode({"location": location})
+						updateProfileQueryString += "&" + urllib.urlencode({"location": self.unicode2utf8(location)})
 					else:
-						updateProfileQueryString += urllib.urlencode({"location": location})
+						updateProfileQueryString += urllib.urlencode({"location": self.unicode2utf8(location)})
 						useAmpersands = True
 				else:
 					raise TangoError("Twitter has a character limit of 30 for all locations. Try again.")
 			if description is not None:
 				if len(list(description)) < 160:
 					if useAmpersands is True:
-						updateProfileQueryString += "&" + urllib.urlencode({"description": description})
+						updateProfileQueryString += "&" + urllib.urlencode({"description": self.unicode2utf8(description)})
 					else:
-						updateProfileQueryString += urllib.urlencode({"description": description})
+						updateProfileQueryString += urllib.urlencode({"description": self.unicode2utf8(description)})
 				else:
 					raise TangoError("Twitter has a character limit of 160 for all descriptions. Try again.")
 			
@@ -527,7 +527,7 @@ class setup:
 			raise TangoError("getBlockedIDs() requires you to be authenticated.")
 	
 	def searchTwitter(self, search_query, **kwargs):
-		searchURL = self.constructApiURL("http://search.twitter.com/search.json", kwargs) + "&" + urllib.urlencode({"q": search_query})
+		searchURL = self.constructApiURL("http://search.twitter.com/search.json", kwargs) + "&" + urllib.urlencode({"q": self.unicode2utf8(search_query)})
 		try:
 			return simplejson.load(urllib2.urlopen(searchURL))
 		except HTTPError, e:
@@ -662,3 +662,11 @@ class setup:
 	
 	def get_content_type(self, filename):
 		return mimetypes.guess_type(filename)[0] or 'application/octet-stream'
+	
+	def unicode2utf8(self, text):
+		try:
+			if isinstance(text, unicode):
+				text = text.encode('utf-8')
+		except:
+			pass
+		return text
